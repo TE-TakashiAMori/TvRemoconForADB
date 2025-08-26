@@ -32,6 +32,7 @@ setup(
     entry_points={
         "console_scripts": [
             "remocon-adb=remocon_for_adb.presentation.cli.main:main",
+            "remocon-adb-gui=remocon_for_adb.presentation.gui.main_window:main",
         ],
     },
     include_package_data=True,

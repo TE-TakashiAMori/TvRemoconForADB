@@ -246,9 +246,9 @@ MIT License
 
 ## 👤 作者
 
-- **作者**: tinygc
-- **GitHub**: https://github.com/tinygc
-- **メール**: tinygc404@gmail.com
+- **作者**: TE-TakashiAMori
+- **GitHub**: https://github.com/TE-TakashiAMori
+- **メール**: takashi.a.mori@sony.com
 
 ## 🔗 関連リンク
 

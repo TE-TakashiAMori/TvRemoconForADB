@@ -9,12 +9,12 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 setup(
     name="remocon-for-adb",
     version="0.1.0",
-    author="tinygc",
-    author_email="tinygc404@gmail.com",
+    author="TE-TakashiAMori",
+    author_email="takashi.a.mori@sony.com",
     description="Android TV Remote Control via ADB for Ubuntu",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/tinygc/RemoconForAdb",
+    url="https://github.com/TE-TakashiAMori/TvRemoconForADB",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 3 - Alpha",

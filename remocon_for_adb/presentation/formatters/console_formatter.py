@@ -127,8 +127,8 @@ class ConsoleFormatter:
             time_text = f"実行時間: {execution_time:.3f}秒"
             print(self._colorize(time_text, 'CYAN'))
 
-    def print_screenshot_result(self, success: bool, filepath: Optional[str] = None, 
-                              file_size: Optional[int] = None, execution_time: Optional[float] = None) -> None:
+    def print_screenshot_result(self, success: bool, filepath: str = "", 
+                              file_size: int = 0, execution_time: float = 0.0, prefix: str = "") -> None:
         """スクリーンショット結果を出力
         
         Args:
@@ -138,18 +138,18 @@ class ConsoleFormatter:
             execution_time: 実行時間（秒）
         """
         if success and filepath:
-            self.print_success(f"スクリーンショットを保存しました")
-            print(f"ファイル: {self._colorize(filepath, 'CYAN')}")
+            self.print_success(f"{prefix}スクリーンショットを保存しました")
+            print(f"{prefix}ファイル: {self._colorize(filepath, 'CYAN')}")
             
             if file_size is not None:
                 size_text = self._format_file_size(file_size)
-                print(f"サイズ: {size_text}")
+                print(f"{prefix}サイズ: {size_text}")
                 
             if execution_time is not None:
                 time_text = f"実行時間: {execution_time:.3f}秒"
-                print(self._colorize(time_text, 'CYAN'))
+                print(f"{prefix}{self._colorize(time_text, 'CYAN')}")
         else:
-            self.print_error("スクリーンショットの撮影に失敗しました")
+            self.print_error(f"{prefix}スクリーンショットの撮影に失敗しました")
 
     def _format_file_size(self, size_bytes: int) -> str:
         """ファイルサイズを読みやすい形式にフォーマット

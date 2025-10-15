@@ -45,6 +45,7 @@ class TestRemoteCommand:
         assert ButtonKey.SELECT.value == "KEYCODE_DPAD_CENTER"
         assert ButtonKey.BACK.value == "KEYCODE_BACK"
         assert ButtonKey.HOME.value == "KEYCODE_HOME"
+        assert ButtonKey.MENU.value == "KEYCODE_MENU"
 
     def test_command_type_enum_values(self):
         """CommandType列挙値のテスト"""
@@ -125,6 +126,27 @@ class TestRemoteCommand:
         # Assert
         assert command.command_type == CommandType.BUTTON
         assert command.key_code == ButtonKey.HOME.value
+        
+    def test_from_string_menu_button(self):
+        """文字列からのメニューボタンコマンド作成テスト"""
+        # Arrange & Act
+        command = RemoteCommand.from_string("menu")
+        
+        # Assert
+        assert command.command_type == CommandType.BUTTON
+        assert command.key_code == ButtonKey.MENU.value
+        assert command.raw_command == "input keyevent KEYCODE_MENU"
+        
+    def test_create_menu_button_command(self):
+        """メニューボタンコマンド作成のテスト"""
+        # Arrange & Act
+        command = RemoteCommand.create_button_command(ButtonKey.MENU)
+        
+        # Assert
+        assert command.command_type == CommandType.BUTTON
+        assert command.key_code == ButtonKey.MENU.value
+        assert command.raw_command == "input keyevent KEYCODE_MENU"
+        assert isinstance(command.timestamp, datetime)
 
     def test_from_string_invalid(self):
         """無効な文字列からのコマンド作成エラーテスト"""

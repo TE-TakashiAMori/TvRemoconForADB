@@ -40,6 +40,9 @@ class ScreenshotCommandDTO:
     """スクリーンショットコマンドのDTO"""
     
     filename: Optional[str] = None
+    directory: Optional[str] = None
+    format: str = "png"
+    quality: int = 95  # JPEG品質（1-100）
     timestamp: datetime = field(default_factory=datetime.now)
 
 

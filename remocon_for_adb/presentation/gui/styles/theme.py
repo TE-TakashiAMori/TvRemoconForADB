@@ -31,8 +31,8 @@ FONTS = {
 
 # サイズ設定
 SIZES = {
-    'window_width': 400,
-    'window_height': 600,
+    'window_width': 450,   # タブ分少し幅を拡張
+    'window_height': 650,  # 適切な高さに調整
     'button_direction': (60, 40),   # 方向キーボタン
     'button_action': (80, 40),      # アクションボタン
     'button_large': (120, 40),      # 大きなボタン

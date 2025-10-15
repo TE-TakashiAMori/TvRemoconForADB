@@ -14,6 +14,7 @@ from remocon_for_adb.application.use_cases.screenshot_use_case import Screenshot
 from remocon_for_adb.presentation.gui.widgets.remote_control_widget import RemoteControlWidget
 from remocon_for_adb.presentation.gui.widgets.device_manager_widget import DeviceManagerWidget
 from remocon_for_adb.presentation.gui.widgets.status_widget import StatusWidget
+from remocon_for_adb.presentation.gui.widgets.screenshot_widget import ScreenshotWidget
 from remocon_for_adb.presentation.gui.styles.theme import (
     COLORS, FONTS, SIZES, MAIN_FRAME_STYLE, FRAME_STYLE
 )
@@ -73,10 +74,28 @@ class MainWindow:
             self._on_device_changed
         )
         
+        # タブウィジェット作成
+        self.notebook = ttk.Notebook(self.main_frame)
+        
+        # リモコンタブ
+        self.remote_tab = tk.Frame(self.notebook, bg=COLORS['background'])
+        self.notebook.add(self.remote_tab, text="🎮 リモコン")
+        
+        # スクリーンショットタブ
+        self.screenshot_tab = tk.Frame(self.notebook, bg=COLORS['background'])
+        self.notebook.add(self.screenshot_tab, text="📸 スクリーンショット")
+        
         # リモコンウィジェット
         self.remote_control = RemoteControlWidget(
-            self.main_frame,
+            self.remote_tab,
             self.remote_control_use_case,
+            self._on_command_executed
+        )
+        
+        # スクリーンショットウィジェット
+        self.screenshot_widget = ScreenshotWidget(
+            self.screenshot_tab,
+            self.screenshot_use_case,
             self._on_command_executed
         )
         
@@ -88,13 +107,20 @@ class MainWindow:
         self.main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         # タイトル
-        self.title_label.pack(pady=(0, 20))
+        self.title_label.pack(pady=(0, 15))
         
         # デバイス管理
-        self.device_manager.pack(fill=tk.X, pady=(0, 20))
+        self.device_manager.pack(fill=tk.X, pady=(0, 15))
         
-        # リモコン
-        self.remote_control.pack(pady=(0, 20))
+        # タブウィジェット
+        self.notebook.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
+        
+        # 各タブ内のレイアウト
+        # リモコンタブ
+        self.remote_control.pack(pady=10)
+        
+        # スクリーンショットタブ
+        self.screenshot_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         # ステータス
         self.status_widget.pack(fill=tk.X)

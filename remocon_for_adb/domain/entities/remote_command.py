@@ -28,6 +28,7 @@ class ButtonKey(Enum):
     SELECT = "KEYCODE_DPAD_CENTER"
     BACK = "KEYCODE_BACK"
     HOME = "KEYCODE_HOME"
+    MENU = "KEYCODE_MENU"
 
 
 @dataclass
@@ -88,7 +89,8 @@ class RemoteCommand:
         button_mapping = {
             'select': ButtonKey.SELECT,
             'back': ButtonKey.BACK,
-            'home': ButtonKey.HOME
+            'home': ButtonKey.HOME,
+            'menu': ButtonKey.MENU
         }
         
         # 方向キーチェック

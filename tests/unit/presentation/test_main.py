@@ -51,7 +51,7 @@ class TestRemoconCLI:
     def test_run_direction_command(self, mock_direction_command):
         """directionコマンド実行をテスト"""
         mock_direction_command.execute.return_value = 0
-        result = self.cli.run(["direction", "up"])
+        result = self.cli.run(["up"])
         assert result == 0
         mock_direction_command.execute.assert_called_once()
 
@@ -59,9 +59,21 @@ class TestRemoconCLI:
     def test_run_button_command(self, mock_button_command):
         """buttonコマンド実行をテスト"""
         mock_button_command.execute.return_value = 0
-        result = self.cli.run(["button", "select"])
+        result = self.cli.run(["select"])
         assert result == 0
         mock_button_command.execute.assert_called_once()
+        
+    @patch('remocon_for_adb.presentation.cli.main.ButtonCommand')
+    def test_run_menu_command(self, mock_button_command_class):
+        """menuコマンド実行をテスト"""
+        mock_button_instance = Mock()
+        mock_button_instance.execute.return_value = 0
+        mock_button_command_class.return_value = mock_button_instance
+        
+        cli = RemoconCLI()
+        result = cli.run(["menu"])
+        assert result == 0
+        mock_button_instance.execute.assert_called_once()
 
     @patch.object(RemoconCLI, 'screenshot_command')
     def test_run_screenshot_command(self, mock_screenshot_command):

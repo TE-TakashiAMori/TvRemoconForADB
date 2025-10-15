@@ -93,10 +93,30 @@ class AdbGateway:
         command = ["shell", "input", "keyevent", keycode]
         return self._execute_adb_command_with_retry(command)
     
-    def capture_screenshot(self, device_path: str) -> AdbResult:
-        """スクリーンショットの取得"""
-        command = ["shell", "screencap", "-p", device_path]
-        return self._execute_adb_command_with_retry(command)
+    def capture_screenshot(self, device_id: str, local_path: str) -> AdbResult:
+        """スクリーンショットの取得
+        
+        Args:
+            device_id: デバイスID
+            local_path: ローカル保存パス
+        """
+        # デバイス上の一時パス
+        temp_device_path = "/sdcard/temp_screenshot.png"
+        
+        # デバイス上でスクリーンショット撮影
+        screenshot_command = ["shell", "screencap", "-p", temp_device_path]
+        screenshot_result = self._execute_adb_command_with_retry(screenshot_command)
+        
+        if not screenshot_result.success:
+            return screenshot_result
+        
+        # ローカルにプル
+        pull_result = self.pull_file(temp_device_path, local_path)
+        
+        # デバイス上の一時ファイル削除
+        self.remove_file(temp_device_path)
+        
+        return pull_result
     
     def pull_file(self, device_path: str, local_path: str) -> AdbResult:
         """ファイルのプル（デバイス→ローカル）"""

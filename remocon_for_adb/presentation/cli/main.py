@@ -56,6 +56,7 @@ class RemoconCLI:
   remocon-adb select                     # 選択ボタン
   remocon-adb back                       # 戻るボタン
   remocon-adb home                       # ホームボタン
+  remocon-adb menu                       # メニューボタン
   remocon-adb screenshot                 # スクリーンショット撮影
   remocon-adb screenshot -f my_screen.png # ファイル名指定でスクリーンショット
             """
@@ -115,12 +116,45 @@ class RemoconCLI:
             "--device", "-d",
             help="対象デバイスID（未指定時は最初のデバイス）"
         )
+        
+        menu_parser = subparsers.add_parser("menu", help="メニューボタン")
+        menu_parser.add_argument(
+            "--device", "-d",
+            help="対象デバイスID（未指定時は最初のデバイス）"
+        )
 
         # screenshot サブコマンド
         screenshot_parser = subparsers.add_parser("screenshot", help="スクリーンショット撮影")
         screenshot_parser.add_argument(
             "--filename", "-f",
             help="出力ファイル名（未指定時は自動生成）"
+        )
+        screenshot_parser.add_argument(
+            "--directory", "-dir",
+            help="保存ディレクトリ（未指定時はデフォルト）"
+        )
+        screenshot_parser.add_argument(
+            "--format", "-fmt",
+            choices=["png", "jpg"],
+            default="png",
+            help="画像形式（デフォルト: png）"
+        )
+        screenshot_parser.add_argument(
+            "--quality", "-q",
+            type=int,
+            default=95,
+            help="JPEG品質 1-100（デフォルト: 95）"
+        )
+        screenshot_parser.add_argument(
+            "--burst", "-b",
+            type=int,
+            help="バースト撮影の枚数"
+        )
+        screenshot_parser.add_argument(
+            "--interval", "-i",
+            type=float,
+            default=1.0,
+            help="バースト撮影の間隔（秒、デフォルト: 1.0）"
         )
         screenshot_parser.add_argument(
             "--device", "-d",
@@ -158,7 +192,7 @@ class RemoconCLI:
                 # 方向キーコマンドの場合、argsにkeyを設定
                 parsed_args.key = parsed_args.command
                 return self.direction_command.execute(parsed_args)
-            elif parsed_args.command in ["select", "back", "home"]:
+            elif parsed_args.command in ["select", "back", "home", "menu"]:
                 # ボタンコマンドの場合、argsにkeyを設定
                 parsed_args.key = parsed_args.command
                 return self.button_command.execute(parsed_args)

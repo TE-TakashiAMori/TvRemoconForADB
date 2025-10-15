@@ -203,19 +203,50 @@ class ScreenshotCommand(BaseCommand):
         try:
             # コマンドDTOを作成
             command_dto = ScreenshotCommandDTO(
-                filename=args.filename
+                filename=args.filename,
+                directory=getattr(args, 'directory', None),
+                format=getattr(args, 'format', 'png'),
+                quality=getattr(args, 'quality', 95)
             )
 
-            # ユースケースを実行
-            self.formatter.print_info("スクリーンショットを撮影しています...")
-            result = self.screenshot_use_case.capture_screenshot(command_dto)
+            # バースト撮影かどうか判定
+            if hasattr(args, 'burst') and args.burst and args.burst > 1:
+                # バースト撮影
+                self.formatter.print_info(f"バースト撮影を開始します ({args.burst}枚)...")
+                results = self.screenshot_use_case.capture_burst_screenshots(
+                    command_dto, 
+                    count=args.burst,
+                    interval=getattr(args, 'interval', 1.0)
+                )
+                
+                # 結果を表示
+                success_count = sum(1 for r in results if r.success)
+                self.formatter.print_info(f"バースト撮影完了: {success_count}/{len(results)}枚成功")
+                
+                for i, result in enumerate(results, 1):
+                    if result.success:
+                        self.formatter.print_screenshot_result(
+                            success=True,
+                            filepath=result.filepath,
+                            file_size=result.filesize,
+                            execution_time=result.execution_time,
+                            prefix=f"[{i}] "
+                        )
+                    else:
+                        self.formatter.print_error(f"[{i}] 撮影失敗: {result.message}")
+                
+                return 0 if success_count > 0 else 1
+            else:
+                # 通常撮影
+                self.formatter.print_info("スクリーンショットを撮影しています...")
+                result = self.screenshot_use_case.capture_screenshot(command_dto)
 
             # 結果を表示
             if result.success:
                 self.formatter.print_screenshot_result(
                     success=True,
                     filepath=result.filepath,
-                    file_size=result.file_size,
+                    file_size=result.filesize,
                     execution_time=result.execution_time
                 )
             else:

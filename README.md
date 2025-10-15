@@ -14,7 +14,7 @@ Android TVデバイスをU```
 
 ## ✨ 主な機能
 
-- 🎮 **基本リモコン操作**: 方向キー（上下左右）、決定、戻る、ホームボタン
+- 🎮 **基本リモコン操作**: 方向キー（上下左右）、決定、戻る、ホーム、メニューボタン
 - � **CLI・GUI両対応**: コマンドライン版とグラフィカル版を提供
 - �📸 **スクリーンショット機能**: Android TVの画面キャプチャと保存
 - 📝 **操作ログ機能**: 実行したコマンドの記録と参照
@@ -120,18 +120,35 @@ remocon-adb right             # 右
 remocon-adb select            # 決定
 remocon-adb back              # 戻る
 remocon-adb home              # ホーム
+remocon-adb menu              # メニュー
 
 # デバイス一覧表示
 remocon-adb devices           # 接続中のデバイス一覧
 ```
 
-#### 拡張機能
+#### スクリーンショット機能
 ```bash
-# スクリーンショット（開発中）
+# 基本撮影
 remocon-adb screenshot
 
+# ファイル名指定
+remocon-adb screenshot -f my_screen.png
+
+# 保存先指定
+remocon-adb screenshot --directory ~/Pictures
+
+# 形式・品質指定
+remocon-adb screenshot --format jpg --quality 85
+
+# バースト撮影（連続3枚、1秒間隔）
+remocon-adb screenshot --burst 3 --interval 1.0
+```
+
+#### その他機能
+```bash
 # 使用方法の詳細表示
 remocon-adb --help
+remocon-adb screenshot --help
 remocon-adb up --help
 remocon-adb select --help
 ```
@@ -157,6 +174,7 @@ remocon-adb-gui
 - 🔵 **リアルタイム状態表示**: デバイス接続状況とコマンド実行結果
 - ⚡ **即座のフィードバック**: ボタン押下時の視覚効果
 - 📱 **デバイス管理**: 複数デバイスの切り替えが簡単
+- 📸 **高機能スクリーンショット**: 撮影・プレビュー・保存先選択が一体化
 
 ### 実際の使用例
 ```bash
@@ -257,10 +275,17 @@ sudo usermod -aG plugdev $USER
 - [x] テスト実装（カバレッジ90%以上）
 - [x] 統合テスト完了（実機動作確認済み）
 
+### ✅ 新機能追加完了
+- [x] 高機能スクリーンショット実装
+  - [x] GUI版：撮影・プレビュー・保存先選択
+  - [x] CLI版：バースト撮影・形式選択・品質設定
+  - [x] 自動ファイル名生成・カスタムディレクトリ
+  - [x] PNG/JPEG対応・連続撮影機能
+
 ### 🚧 進行中  
-- [ ] スクリーンショット機能の最終調整
-- [ ] エラーハンドリングの改善
-- [ ] ドキュメントの充実
+- [ ] 高度な自動化機能
+- [ ] ログ機能の拡張
+- [ ] パフォーマンス最適化
 
 ### 📋 今後の予定
 - [ ] 統合テスト実装

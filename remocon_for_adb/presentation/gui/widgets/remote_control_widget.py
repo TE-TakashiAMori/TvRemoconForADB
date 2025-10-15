@@ -96,6 +96,13 @@ class RemoteControlWidget(tk.Frame):
             **ACTION_BUTTON_STYLE
         )
         
+        self.btn_menu = tk.Button(
+            self.action_frame,
+            text="メニュー",
+            command=lambda: self.send_button('menu'),
+            **ACTION_BUTTON_STYLE
+        )
+        
         # ホバー効果を適用
         self._apply_hover_effects()
 
@@ -103,7 +110,7 @@ class RemoteControlWidget(tk.Frame):
         """ボタンにホバー効果を適用"""
         buttons = [
             self.btn_up, self.btn_down, self.btn_left, self.btn_right,
-            self.btn_back, self.btn_home
+            self.btn_back, self.btn_home, self.btn_menu
         ]
         
         for button in buttons:
@@ -140,6 +147,7 @@ class RemoteControlWidget(tk.Frame):
         # アクションボタンレイアウト（縦並び）
         self.btn_back.pack(pady=5)
         self.btn_home.pack(pady=5)
+        self.btn_menu.pack(pady=5)
 
     def send_direction(self, direction: str) -> None:
         """方向キーコマンドを送信
@@ -153,7 +161,7 @@ class RemoteControlWidget(tk.Frame):
         """ボタンコマンドを送信
         
         Args:
-            button: ボタン（select, back, home）
+            button: ボタン（select, back, home, menu）
         """
         self._send_command_async('button', button)
 
@@ -209,7 +217,7 @@ class RemoteControlWidget(tk.Frame):
         
         buttons = [
             self.btn_up, self.btn_down, self.btn_left, self.btn_right,
-            self.btn_select, self.btn_back, self.btn_home
+            self.btn_select, self.btn_back, self.btn_home, self.btn_menu
         ]
         
         for button in buttons:

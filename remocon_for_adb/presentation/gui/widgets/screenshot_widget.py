@@ -267,6 +267,15 @@ class ScreenshotWidget(tk.Frame):
             bg=COLORS['background']
         )
         
+        # ヒントラベル
+        self.hint_label = tk.Label(
+            self.record_status_frame,
+            text="💡 録画中もリモコンタブでキー操作が可能です",
+            font=FONTS['small'],
+            fg=COLORS['accent'],
+            bg=COLORS['background']
+        )
+        
         # ホバー効果適用
         self._apply_hover_effects()
 
@@ -353,6 +362,7 @@ class ScreenshotWidget(tk.Frame):
         self.record_status_label.pack(anchor=tk.W, pady=2)
         self.record_timer_label.pack(anchor=tk.W, pady=2)
         self.last_record_label.pack(anchor=tk.W, pady=2)
+        self.hint_label.pack(anchor=tk.W, pady=(5, 2))
 
     def _capture_screenshot(self) -> None:
         """スクリーンショットを撮影"""

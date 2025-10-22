@@ -302,12 +302,14 @@ class AdbGateway:
                 return self.pull_screen_record(device_id, local_path)
             
             # プロセスIDを抽出
-            # 出力例: "shell    12345  1234  ... screenrecord"
+            # 出力例: "shell    19627   740  ... screenrecord"
             lines = ps_result.stdout.strip().split('\n')
             for line in lines:
-                if 'screenrecord' in line and '/sdcard/' in line:
+                if 'screenrecord' in line:
                     parts = line.split()
-                    if len(parts) >= 2:
+                    # USER PID PPID ... NAME の形式
+                    # screenrecordプロセスは通常shellユーザーで実行される
+                    if len(parts) >= 2 and parts[-1] == 'screenrecord':
                         pid = parts[1]
                         # SIGINTシグナルを送信して正常終了
                         kill_result = self._execute_adb_command(["shell", f"kill -2 {pid}"])
@@ -360,6 +362,15 @@ class AdbGateway:
         """
         try:
             ps_result = self._execute_adb_command(["shell", "ps"])
-            return "screenrecord" in ps_result.stdout and "/sdcard/" in ps_result.stdout
+            if not ps_result.success:
+                return False
+            
+            # プロセス一覧からscreenrecordを検索
+            for line in ps_result.stdout.split('\n'):
+                if 'screenrecord' in line:
+                    parts = line.split()
+                    if len(parts) >= 1 and parts[-1] == 'screenrecord':
+                        return True
+            return False
         except Exception:
             return False

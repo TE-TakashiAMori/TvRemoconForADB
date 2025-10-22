@@ -8,6 +8,7 @@ COLORS = {
     'primary': '#007ACC',      # メインブルー
     'primary_dark': '#005A9F', # ダークブルー
     'secondary': '#4A90E2',    # セカンダリブルー
+    'accent': '#FFC107',       # アクセントカラー（アンバー）
     'background': '#2D2D30',   # ダークグレー背景
     'surface': '#3E3E42',      # サーフェスグレー
     'text': '#FFFFFF',         # ホワイトテキスト

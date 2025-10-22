@@ -270,7 +270,7 @@ class AdbGateway:
             time.sleep(0.5)
             
             # 録画プロセスが動いているか確認
-            check_result = self._execute_adb_command(["shell", "ps | grep screenrecord"])
+            check_result = self._execute_adb_command(["shell", "ps"])
             
             if "screenrecord" not in check_result.stdout:
                 return False
@@ -292,13 +292,16 @@ class AdbGateway:
         """
         try:
             # screenrecordプロセスを検索
-            ps_result = self._execute_adb_command(["shell", "ps | grep screenrecord"])
+            ps_result = self._execute_adb_command(["shell", "ps"])
+            
+            if not ps_result.success:
+                return False
             
             if "screenrecord" not in ps_result.stdout:
-                # 既に停止している場合はプルだけ実行
+                # 既に停止している場合（時間指定録画など）はプルだけ実行
                 return self.pull_screen_record(device_id, local_path)
             
-            # プロセスIDを抽出（簡易版）
+            # プロセスIDを抽出
             # 出力例: "shell    12345  1234  ... screenrecord"
             lines = ps_result.stdout.strip().split('\n')
             for line in lines:
@@ -356,7 +359,7 @@ class AdbGateway:
             bool: 録画中の場合True
         """
         try:
-            ps_result = self._execute_adb_command(["shell", "ps | grep screenrecord"])
+            ps_result = self._execute_adb_command(["shell", "ps"])
             return "screenrecord" in ps_result.stdout and "/sdcard/" in ps_result.stdout
         except Exception:
             return False

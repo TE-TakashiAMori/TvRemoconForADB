@@ -130,14 +130,14 @@ class MainWindow:
 
     def _setup_keyboard_bindings(self) -> None:
         """キーボードショートカットを設定"""
-        # リモコンキーをbind_allで全ウィジェットに適用（録画中でも有効）
-        self.root.bind_all('<Up>', lambda e: self._handle_key_event('up'))
-        self.root.bind_all('<Down>', lambda e: self._handle_key_event('down'))
-        self.root.bind_all('<Left>', lambda e: self._handle_key_event('left'))
-        self.root.bind_all('<Right>', lambda e: self._handle_key_event('right'))
-        self.root.bind_all('<Return>', lambda e: self._handle_button_event('select'))
-        self.root.bind_all('<Escape>', lambda e: self._handle_button_event('back'))
-        self.root.bind_all('<F1>', lambda e: self._handle_button_event('home'))
+        # リモコンキーをrootウィンドウにバインド（どのタブでも有効）
+        self.root.bind('<Up>', lambda e: self._handle_key_event('up'))
+        self.root.bind('<Down>', lambda e: self._handle_key_event('down'))
+        self.root.bind('<Left>', lambda e: self._handle_key_event('left'))
+        self.root.bind('<Right>', lambda e: self._handle_key_event('right'))
+        self.root.bind('<Return>', lambda e: self._handle_button_event('select'))
+        self.root.bind('<Escape>', lambda e: self._handle_button_event('back'))
+        self.root.bind('<F1>', lambda e: self._handle_button_event('home'))
         
         # フォーカスを設定してキーボードイベントを受信できるようにする
         self.root.focus_set()
@@ -150,8 +150,10 @@ class MainWindow:
         """
         # Entry/Textウィジェットにフォーカスがある場合はスキップ
         focused_widget = self.root.focus_get()
-        if focused_widget and isinstance(focused_widget, (tk.Entry, tk.Text, tk.Spinbox)):
-            return
+        if focused_widget:
+            widget_class = focused_widget.winfo_class()
+            if widget_class in ('Entry', 'Text', 'Spinbox', 'TEntry', 'TSpinbox'):
+                return
         
         self.remote_control.send_direction(direction)
     
@@ -161,11 +163,14 @@ class MainWindow:
         Args:
             button: ボタン名（select/back/home）
         """
-        # Entry/Textウィジェットにフォーカスがある場合はスキップ（Returnは除く）
+        # Entry/Textウィジェットにフォーカスがある場合はスキップ
         focused_widget = self.root.focus_get()
-        if focused_widget and isinstance(focused_widget, (tk.Entry, tk.Text, tk.Spinbox)):
-            if button != 'select':  # Enterキーは入力確定として使えるように
-                return
+        if focused_widget:
+            widget_class = focused_widget.winfo_class()
+            # Enterキーは入力ウィジェットで使えるように、backとhomeのみスキップ
+            if widget_class in ('Entry', 'Text', 'Spinbox', 'TEntry', 'TSpinbox'):
+                if button in ('back', 'home'):
+                    return
         
         self.remote_control.send_button(button)
 

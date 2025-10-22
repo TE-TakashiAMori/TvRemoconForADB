@@ -198,9 +198,10 @@ class RemoteControlWidget(tk.Frame):
                     
             except Exception as e:
                 # UIスレッドでエラーを表示
-                self.after(0, lambda: messagebox.showerror(
+                error_msg = str(e)
+                self.after(0, lambda msg=error_msg: messagebox.showerror(
                     "エラー", 
-                    f"予期しないエラーが発生しました\\n{str(e)}"
+                    f"予期しないエラーが発生しました\\n{msg}"
                 ))
         
         # 別スレッドでコマンドを実行（UIをブロックしないため）

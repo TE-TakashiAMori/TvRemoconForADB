@@ -131,7 +131,8 @@ class DeviceManagerWidget(tk.Frame):
                 
             except Exception as e:
                 # UIスレッドでエラーを表示
-                self.after(0, lambda: self._handle_error(f"デバイス検索エラー: {str(e)}"))
+                error_msg = str(e)
+                self.after(0, lambda msg=error_msg: self._handle_error(f"デバイス検索エラー: {msg}"))
             finally:
                 # UIを有効化
                 self.after(0, lambda: self._set_loading(False))

@@ -391,7 +391,8 @@ class ScreenshotWidget(tk.Frame):
                 
             except Exception as e:
                 # UIスレッドでエラーを表示
-                self.after(0, lambda: self._handle_error(f"撮影エラー: {str(e)}"))
+                error_msg = str(e)
+                self.after(0, lambda msg=error_msg: self._handle_error(f"撮影エラー: {msg}"))
             finally:
                 # UIを有効化
                 self.after(0, lambda: self._set_loading(False))
@@ -590,7 +591,8 @@ class ScreenshotWidget(tk.Frame):
                 
             except Exception as e:
                 # UIスレッドでエラーを表示
-                self.after(0, lambda: self._handle_record_error(f"録画開始エラー: {str(e)}"))
+                error_msg = str(e)
+                self.after(0, lambda msg=error_msg: self._handle_record_error(f"録画開始エラー: {msg}"))
         
         # 別スレッドで実行
         thread = threading.Thread(target=start, daemon=True)
@@ -647,7 +649,8 @@ class ScreenshotWidget(tk.Frame):
                 
             except Exception as e:
                 # UIスレッドでエラーを表示
-                self.after(0, lambda: self._handle_record_error(f"録画停止エラー: {str(e)}"))
+                error_msg = str(e)
+                self.after(0, lambda msg=error_msg: self._handle_record_error(f"録画停止エラー: {msg}"))
         
         # 別スレッドで実行
         thread = threading.Thread(target=stop, daemon=True)

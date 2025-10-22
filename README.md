@@ -144,10 +144,37 @@ remocon-adb screenshot --format jpg --quality 85
 remocon-adb screenshot --burst 3 --interval 1.0
 ```
 
+#### 画面録画機能
+```bash
+# 基本録画（30秒、デフォルト）
+remocon-adb record
+
+# 時間指定録画
+remocon-adb record -d 60              # 60秒録画
+remocon-adb record --duration 120     # 120秒録画
+
+# 手動停止モード（Ctrl+Cで停止）
+remocon-adb record --manual
+remocon-adb record -d 0               # 時間0でも手動停止
+
+# ファイル名・保存先指定
+remocon-adb record -f demo.mp4
+remocon-adb record --directory ~/Videos
+
+# 組み合わせ
+remocon-adb record -d 90 -f gameplay.mp4 --directory ~/Desktop
+```
+
+**注意事項:**
+- 最大録画時間: 180秒（3分）- Androidの制限
+- ファイル形式: MP4（H.264）
+- 解像度: デバイスのネイティブ解像度
+
 #### その他機能
 ```bash
 # 使用方法の詳細表示
 remocon-adb --help
+remocon-adb record --help
 remocon-adb screenshot --help
 remocon-adb up --help
 remocon-adb select --help
@@ -175,6 +202,15 @@ remocon-adb-gui
 - ⚡ **即座のフィードバック**: ボタン押下時の視覚効果
 - 📱 **デバイス管理**: 複数デバイスの切り替えが簡単
 - 📸 **高機能スクリーンショット**: 撮影・プレビュー・保存先選択が一体化
+- 📹 **画面録画機能**: 時間指定録画と手動停止、リアルタイムタイマー表示
+
+#### 画面録画の使い方（GUI）
+1. 「📸 スクショ・録画」タブを開く
+2. 録画時間を設定（1-180秒）または手動停止モードをチェック
+3. 「🔴 録画開始」ボタンをクリック
+4. 録画中は経過時間がリアルタイム表示される
+5. 時間指定モードは自動停止、手動モードは「⏹️ 停止」ボタンで停止
+6. 録画完了後、ファイル情報（サイズ・時間）が表示される
 
 ### 実際の使用例
 ```bash
@@ -281,16 +317,20 @@ sudo usermod -aG plugdev $USER
   - [x] CLI版：バースト撮影・形式選択・品質設定
   - [x] 自動ファイル名生成・カスタムディレクトリ
   - [x] PNG/JPEG対応・連続撮影機能
+- [x] 画面録画機能実装
+  - [x] CLI版：時間指定録画・手動停止モード・プログレスバー表示
+  - [x] GUI版：録画ボタン・リアルタイムタイマー・状態管理
+  - [x] MP4形式対応（最大180秒）
+  - [x] Clean Architecture全層実装完了
 
 ### 🚧 進行中  
-- [ ] 高度な自動化機能
-- [ ] ログ機能の拡張
-- [ ] パフォーマンス最適化
+- [ ] 画面録画機能のユニットテスト作成
+- [ ] 実機での統合テスト実施
 
 ### 📋 今後の予定
-- [ ] 統合テスト実装
-- [ ] E2Eテスト実装
-- [ ] CLI インターフェース実装
+- [ ] 高度な自動化機能（操作記録・再生）
+- [ ] ログ機能の拡張
+- [ ] パフォーマンス最適化
 - [ ] パッケージング
 - [ ] ドキュメント整備
 

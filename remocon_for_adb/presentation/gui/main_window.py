@@ -11,6 +11,7 @@ from remocon_for_adb.infrastructure.gateways.adb_gateway import AdbGateway
 from remocon_for_adb.infrastructure.repositories.adb_device_repository import AdbDeviceRepository
 from remocon_for_adb.application.use_cases.remote_control_use_case import RemoteControlUseCase
 from remocon_for_adb.application.use_cases.screenshot_use_case import ScreenshotUseCase
+from remocon_for_adb.application.use_cases.screen_record_use_case import ScreenRecordUseCase
 from remocon_for_adb.presentation.gui.widgets.remote_control_widget import RemoteControlWidget
 from remocon_for_adb.presentation.gui.widgets.device_manager_widget import DeviceManagerWidget
 from remocon_for_adb.presentation.gui.widgets.status_widget import StatusWidget
@@ -32,6 +33,7 @@ class MainWindow:
         # Application層の初期化
         self.remote_control_use_case = RemoteControlUseCase(self.device_repository)
         self.screenshot_use_case = ScreenshotUseCase(self.device_repository)
+        self.screen_record_use_case = ScreenRecordUseCase(self.device_repository)
         
         # GUIの初期化
         self._setup_window()
@@ -81,9 +83,9 @@ class MainWindow:
         self.remote_tab = tk.Frame(self.notebook, bg=COLORS['background'])
         self.notebook.add(self.remote_tab, text="🎮 リモコン")
         
-        # スクリーンショットタブ
+        # スクリーンショット・録画タブ
         self.screenshot_tab = tk.Frame(self.notebook, bg=COLORS['background'])
-        self.notebook.add(self.screenshot_tab, text="📸 スクリーンショット")
+        self.notebook.add(self.screenshot_tab, text="📸 スクショ・録画")
         
         # リモコンウィジェット
         self.remote_control = RemoteControlWidget(
@@ -92,10 +94,11 @@ class MainWindow:
             self._on_command_executed
         )
         
-        # スクリーンショットウィジェット
+        # スクリーンショット・録画ウィジェット
         self.screenshot_widget = ScreenshotWidget(
             self.screenshot_tab,
             self.screenshot_use_case,
+            self.screen_record_use_case,
             self._on_command_executed
         )
         

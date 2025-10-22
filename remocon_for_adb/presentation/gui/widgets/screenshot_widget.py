@@ -1,16 +1,18 @@
 """
 Screenshot Widget
-スクリーンショット撮影・プレビューウィジェット
+スクリーンショット撮影・プレビュー・録画ウィジェット
 """
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from PIL import Image, ImageTk
 import threading
+import time
 from pathlib import Path
 from typing import Optional, Callable
 
 from remocon_for_adb.application.use_cases.screenshot_use_case import ScreenshotUseCase
-from remocon_for_adb.application.dtos.command_dto import ScreenshotCommandDTO
+from remocon_for_adb.application.use_cases.screen_record_use_case import ScreenRecordUseCase
+from remocon_for_adb.application.dtos.command_dto import ScreenshotCommandDTO, ScreenRecordCommandDTO
 from remocon_for_adb.presentation.gui.styles.theme import (
     COLORS, FONTS, BUTTON_STYLE, PRIMARY_BUTTON_STYLE, LABEL_STYLE, 
     FRAME_STYLE, apply_button_hover_effects
@@ -18,21 +20,29 @@ from remocon_for_adb.presentation.gui.styles.theme import (
 
 
 class ScreenshotWidget(tk.Frame):
-    """スクリーンショットウィジェット"""
+    """スクリーンショット・録画ウィジェット"""
 
     def __init__(self, parent, screenshot_use_case: ScreenshotUseCase,
+                 screen_record_use_case: ScreenRecordUseCase,
                  status_callback: Optional[Callable[[str, bool, float], None]] = None):
-        """スクリーンショットウィジェットを初期化
+        """スクリーンショット・録画ウィジェットを初期化
         
         Args:
             parent: 親ウィジェット
             screenshot_use_case: スクリーンショットユースケース
+            screen_record_use_case: 画面録画ユースケース
             status_callback: ステータス更新コールバック
         """
         super().__init__(parent, **FRAME_STYLE)
         self.screenshot_use_case = screenshot_use_case
+        self.screen_record_use_case = screen_record_use_case
         self.status_callback = status_callback
         self.preview_window: Optional[tk.Toplevel] = None
+        
+        # 録画関連の状態
+        self.is_recording = False
+        self.record_start_time: Optional[float] = None
+        self.timer_after_id: Optional[str] = None
         
         self._create_widgets()
         self._setup_layout()
@@ -148,6 +158,115 @@ class ScreenshotWidget(tk.Frame):
             bg=COLORS['background']
         )
         
+        # ===== 録画セクション =====
+        # 区切り線
+        self.separator = ttk.Separator(self, orient='horizontal')
+        
+        # 録画タイトル
+        self.record_title_label = tk.Label(
+            self,
+            text="📹 画面録画",
+            font=FONTS['title'],
+            fg=COLORS['text'],
+            bg=COLORS['background']
+        )
+        
+        # 録画ボタンフレーム
+        self.record_button_frame = tk.Frame(self, **FRAME_STYLE)
+        
+        # 録画開始ボタン
+        self.record_start_button = tk.Button(
+            self.record_button_frame,
+            text="🔴 録画開始",
+            command=self._start_recording,
+            **PRIMARY_BUTTON_STYLE,
+            width=12,
+            height=2
+        )
+        
+        # 録画停止ボタン
+        self.record_stop_button = tk.Button(
+            self.record_button_frame,
+            text="⏹️ 停止",
+            command=self._stop_recording,
+            **BUTTON_STYLE,
+            width=12,
+            state=tk.DISABLED
+        )
+        
+        # 録画設定フレーム
+        self.record_settings_frame = tk.Frame(self, **FRAME_STYLE)
+        
+        # 録画時間設定
+        self.record_duration_label = tk.Label(
+            self.record_settings_frame,
+            text="録画時間:",
+            **LABEL_STYLE
+        )
+        
+        self.record_duration_var = tk.IntVar(value=30)
+        self.record_duration_spinbox = tk.Spinbox(
+            self.record_settings_frame,
+            from_=1,
+            to=180,
+            textvariable=self.record_duration_var,
+            width=8,
+            font=FONTS['default'],
+            bg=COLORS['surface'],
+            fg=COLORS['text'],
+            buttonbackground=COLORS['button_normal']
+        )
+        
+        self.record_duration_unit_label = tk.Label(
+            self.record_settings_frame,
+            text="秒",
+            **LABEL_STYLE
+        )
+        
+        # 手動停止チェックボックス
+        self.manual_mode_var = tk.BooleanVar(value=False)
+        self.manual_mode_check = tk.Checkbutton(
+            self.record_settings_frame,
+            text="☑ 手動停止",
+            variable=self.manual_mode_var,
+            command=self._toggle_manual_mode,
+            font=FONTS['default'],
+            fg=COLORS['text'],
+            bg=COLORS['background'],
+            selectcolor=COLORS['surface'],
+            activebackground=COLORS['background']
+        )
+        
+        # 録画状態表示フレーム
+        self.record_status_frame = tk.Frame(self, **FRAME_STYLE)
+        
+        # 状態ラベル
+        self.record_status_label = tk.Label(
+            self.record_status_frame,
+            text="状態: 待機中",
+            font=FONTS['default'],
+            fg=COLORS['text_secondary'],
+            bg=COLORS['background']
+        )
+        
+        # タイマー表示
+        self.record_timer_label = tk.Label(
+            self.record_status_frame,
+            text="経過時間: --:--",
+            font=FONTS['default'],
+            fg=COLORS['text_secondary'],
+            bg=COLORS['background']
+        )
+        
+        # 最後の録画情報
+        self.last_record_label = tk.Label(
+            self.record_status_frame,
+            text="最後の録画: なし",
+            font=FONTS['small'],
+            fg=COLORS['text_secondary'],
+            bg=COLORS['background']
+        )
+        
         # ホバー効果適用
         self._apply_hover_effects()
 
@@ -161,8 +280,16 @@ class ScreenshotWidget(tk.Frame):
             COLORS['primary_dark']
         )
         
+        # 録画開始ボタン（プライマリ）
+        apply_button_hover_effects(
+            self.record_start_button,
+            COLORS['primary'],
+            COLORS['primary_dark'],
+            COLORS['primary_dark']
+        )
+        
         # 他のボタン
-        for button in [self.preview_button, self.browse_button]:
+        for button in [self.preview_button, self.browse_button, self.record_stop_button]:
             apply_button_hover_effects(
                 button,
                 COLORS['button_normal'],
@@ -199,6 +326,33 @@ class ScreenshotWidget(tk.Frame):
         # 最後の撮影情報
         self.info_frame.pack(fill=tk.X)
         self.last_screenshot_label.pack()
+        
+        # ===== 録画セクション =====
+        # 区切り線
+        self.separator.pack(fill=tk.X, pady=(15, 15))
+        
+        # 録画タイトル
+        self.record_title_label.pack(pady=(0, 10))
+        
+        # 録画ボタン
+        self.record_button_frame.pack(pady=(0, 10))
+        self.record_start_button.pack(side=tk.LEFT, padx=(0, 10))
+        self.record_stop_button.pack(side=tk.LEFT)
+        
+        # 録画設定
+        self.record_settings_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        self.record_duration_label.grid(row=0, column=0, sticky=tk.W, pady=2)
+        self.record_duration_spinbox.grid(row=0, column=1, sticky=tk.W, padx=(5, 2), pady=2)
+        self.record_duration_unit_label.grid(row=0, column=2, sticky=tk.W, padx=(0, 15), pady=2)
+        self.manual_mode_check.grid(row=0, column=3, sticky=tk.W, pady=2)
+        
+        # 録画状態表示
+        self.record_status_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        self.record_status_label.pack(anchor=tk.W, pady=2)
+        self.record_timer_label.pack(anchor=tk.W, pady=2)
+        self.last_record_label.pack(anchor=tk.W, pady=2)
 
     def _capture_screenshot(self) -> None:
         """スクリーンショットを撮影"""
@@ -387,3 +541,260 @@ class ScreenshotWidget(tk.Frame):
         self.format_combo.config(state=combo_state)
         self.path_entry.config(state=state)
         self.browse_button.config(state=state)
+        
+        # 録画ボタンは録画中でなければ有効
+        if not self.is_recording:
+            self.record_start_button.config(state=state)
+
+    # ===== 録画関連メソッド =====
+    
+    def _toggle_manual_mode(self) -> None:
+        """手動停止モードの切り替え"""
+        manual = self.manual_mode_var.get()
+        state = tk.DISABLED if manual else tk.NORMAL
+        self.record_duration_spinbox.config(state=state)
+
+    def _start_recording(self) -> None:
+        """録画を開始"""
+        def start():
+            try:
+                # UIを無効化
+                self.after(0, lambda: self._set_recording_ui(True))
+                
+                # 録画時間の決定
+                duration = 0 if self.manual_mode_var.get() else self.record_duration_var.get()
+                
+                # DTOを作成
+                command_dto = ScreenRecordCommandDTO(
+                    duration=duration,
+                    directory=self.path_var.get().strip(),
+                    format='mp4',
+                    manual_mode=self.manual_mode_var.get()
+                )
+                
+                # 録画開始
+                result = self.screen_record_use_case.start_recording(command_dto)
+                
+                # UIスレッドで結果処理
+                self.after(0, lambda: self._handle_record_start_result(result))
+                
+            except Exception as e:
+                # UIスレッドでエラーを表示
+                self.after(0, lambda: self._handle_record_error(f"録画開始エラー: {str(e)}"))
+        
+        # 別スレッドで実行
+        thread = threading.Thread(target=start, daemon=True)
+        thread.start()
+
+    def _handle_record_start_result(self, result) -> None:
+        """録画開始結果を処理
+        
+        Args:
+            result: ScreenRecordResultDTO
+        """
+        if result.success:
+            # 録画開始成功
+            self.is_recording = True
+            self.record_start_time = time.time()
+            
+            # ステータス更新
+            self.record_status_label.config(
+                text="状態: 🔴 録画中",
+                fg=COLORS['error']
+            )
+            
+            # タイマー開始
+            self._update_timer()
+            
+            # ステータスコールバック
+            if self.status_callback:
+                self.status_callback("record_start", True, result.execution_time)
+        else:
+            # 録画開始失敗
+            self._set_recording_ui(False)
+            messagebox.showerror("録画開始失敗", result.message)
+
+    def _stop_recording(self) -> None:
+        """録画を停止"""
+        def stop():
+            try:
+                # タイマー停止
+                if self.timer_after_id:
+                    self.after_cancel(self.timer_after_id)
+                    self.timer_after_id = None
+                
+                # 停止中表示
+                self.after(0, lambda: self.record_status_label.config(
+                    text="状態: ⏸️ 停止処理中...",
+                    fg=COLORS['warning']
+                ))
+                
+                # 録画停止
+                result = self.screen_record_use_case.stop_recording()
+                
+                # UIスレッドで結果処理
+                self.after(0, lambda: self._handle_record_stop_result(result))
+                
+            except Exception as e:
+                # UIスレッドでエラーを表示
+                self.after(0, lambda: self._handle_record_error(f"録画停止エラー: {str(e)}"))
+        
+        # 別スレッドで実行
+        thread = threading.Thread(target=stop, daemon=True)
+        thread.start()
+
+    def _handle_record_stop_result(self, result) -> None:
+        """録画停止結果を処理
+        
+        Args:
+            result: ScreenRecordResultDTO
+        """
+        self.is_recording = False
+        self.record_start_time = None
+        
+        # UIを有効化
+        self._set_recording_ui(False)
+        
+        if result.success:
+            # 成功時の処理
+            filename = Path(result.filepath).name
+            filesize_mb = result.filesize / (1024 * 1024)
+            
+            self.record_status_label.config(
+                text="状態: ✅ 完了",
+                fg=COLORS['success']
+            )
+            
+            self.last_record_label.config(
+                text=f"最後の録画: {filename} ({filesize_mb:.2f}MB, {result.duration:.1f}秒)",
+                fg=COLORS['success']
+            )
+            
+            # ステータスコールバック
+            if self.status_callback:
+                self.status_callback("record_stop", True, result.execution_time)
+            
+            # 成功メッセージ
+            messagebox.showinfo(
+                "録画完了",
+                f"録画を保存しました\n{filename}\n"
+                f"録画時間: {result.duration:.1f}秒\n"
+                f"ファイルサイズ: {filesize_mb:.2f}MB"
+            )
+        else:
+            # 失敗時の処理
+            self.record_status_label.config(
+                text="状態: ❌ 失敗",
+                fg=COLORS['error']
+            )
+            
+            self.last_record_label.config(
+                text=f"録画失敗: {result.message}",
+                fg=COLORS['error']
+            )
+            
+            # エラーメッセージ
+            messagebox.showerror("録画失敗", result.message)
+
+    def _update_timer(self) -> None:
+        """タイマーを更新"""
+        if not self.is_recording or not self.record_start_time:
+            return
+        
+        # 経過時間計算
+        elapsed = time.time() - self.record_start_time
+        minutes = int(elapsed // 60)
+        seconds = int(elapsed % 60)
+        
+        # 手動モードかどうか
+        if self.manual_mode_var.get():
+            # 手動停止モード
+            remaining = 180 - int(elapsed)  # 最大3分
+            timer_text = f"経過時間: {minutes:02d}:{seconds:02d} / 03:00 (手動停止)"
+        else:
+            # 時間指定モード
+            duration = self.record_duration_var.get()
+            remaining = duration - int(elapsed)
+            total_minutes = duration // 60
+            total_seconds = duration % 60
+            timer_text = f"経過時間: {minutes:02d}:{seconds:02d} / {total_minutes:02d}:{total_seconds:02d}"
+        
+        self.record_timer_label.config(text=timer_text)
+        
+        # 最大時間チェック（180秒=3分）
+        if elapsed >= 180:
+            self._stop_recording()
+            return
+        
+        # 時間指定モードで時間到達
+        if not self.manual_mode_var.get() and elapsed >= self.record_duration_var.get():
+            self._stop_recording()
+            return
+        
+        # 次の更新をスケジュール
+        self.timer_after_id = self.after(500, self._update_timer)
+
+    def _set_recording_ui(self, recording: bool) -> None:
+        """録画中のUI状態を設定
+        
+        Args:
+            recording: 録画中の場合True
+        """
+        if recording:
+            # 録画中
+            self.record_start_button.config(state=tk.DISABLED)
+            self.record_stop_button.config(state=tk.NORMAL)
+            self.record_duration_spinbox.config(state=tk.DISABLED)
+            self.manual_mode_check.config(state=tk.DISABLED)
+            
+            # スクリーンショット機能も無効化
+            self.capture_button.config(state=tk.DISABLED)
+            self.preview_button.config(state=tk.DISABLED)
+            self.filename_entry.config(state=tk.DISABLED)
+            self.format_combo.config(state=tk.DISABLED)
+            self.path_entry.config(state=tk.DISABLED)
+            self.browse_button.config(state=tk.DISABLED)
+        else:
+            # 待機中
+            self.record_start_button.config(state=tk.NORMAL)
+            self.record_stop_button.config(state=tk.DISABLED)
+            self.manual_mode_check.config(state=tk.NORMAL)
+            
+            # 手動モードでなければ時間設定を有効化
+            if not self.manual_mode_var.get():
+                self.record_duration_spinbox.config(state=tk.NORMAL)
+            
+            # スクリーンショット機能も有効化
+            self.capture_button.config(state=tk.NORMAL)
+            self.preview_button.config(state=tk.NORMAL if hasattr(self, 'last_filepath') else tk.DISABLED)
+            self.filename_entry.config(state=tk.NORMAL)
+            self.format_combo.config(state="readonly")
+            self.path_entry.config(state=tk.NORMAL)
+            self.browse_button.config(state=tk.NORMAL)
+            
+            # ステータスリセット
+            self.record_status_label.config(
+                text="状態: 待機中",
+                fg=COLORS['text_secondary']
+            )
+            self.record_timer_label.config(text="経過時間: --:--")
+
+    def _handle_record_error(self, error_message: str) -> None:
+        """録画エラーハンドリング
+        
+        Args:
+            error_message: エラーメッセージ
+        """
+        self.is_recording = False
+        self.record_start_time = None
+        self._set_recording_ui(False)
+        
+        self.record_status_label.config(
+            text="状態: ❌ エラー",
+            fg=COLORS['error']
+        )
+        self.last_record_label.config(
+            text=f"エラー: {error_message}",
+            fg=COLORS['error']
+        )
+        messagebox.showerror("エラー", error_message)

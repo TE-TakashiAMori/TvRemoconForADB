@@ -4,12 +4,17 @@ CLI コマンドハンドラー
 """
 
 import argparse
+import time
+import signal
+import sys
 from typing import Optional
 
 from remocon_for_adb.application.dtos.command_dto import RemoteCommandDTO
 from remocon_for_adb.application.dtos.command_dto import ScreenshotCommandDTO
+from remocon_for_adb.application.dtos.command_dto import ScreenRecordCommandDTO
 from remocon_for_adb.application.use_cases.remote_control_use_case import RemoteControlUseCase
 from remocon_for_adb.application.use_cases.screenshot_use_case import ScreenshotUseCase
+from remocon_for_adb.application.use_cases.screen_record_use_case import ScreenRecordUseCase
 from remocon_for_adb.domain.repositories.device_repository import DeviceRepository, DeviceConnectionError
 from remocon_for_adb.presentation.formatters.console_formatter import ConsoleFormatter
 
@@ -258,4 +263,170 @@ class ScreenshotCommand(BaseCommand):
 
         except Exception as e:
             self.formatter.print_error(f"スクリーンショットコマンドエラー: {e}")
+            return 1
+
+
+class RecordCommand(BaseCommand):
+    """画面録画コマンド"""
+
+    def __init__(self, screen_record_use_case: ScreenRecordUseCase, formatter: ConsoleFormatter):
+        """画面録画コマンドを初期化
+        
+        Args:
+            screen_record_use_case: 画面録画ユースケース
+            formatter: コンソール出力フォーマッター
+        """
+        super().__init__(formatter)
+        self.screen_record_use_case = screen_record_use_case
+        self.stop_requested = False
+
+    def execute(self, args: argparse.Namespace) -> int:
+        """画面録画コマンドを実行
+        
+        Args:
+            args: 解析済みコマンドライン引数
+            
+        Returns:
+            終了コード
+        """
+        try:
+            # 手動停止モードの判定
+            manual_mode = getattr(args, 'manual', False) or args.duration == 0
+            
+            # コマンドDTOを作成
+            command_dto = ScreenRecordCommandDTO(
+                duration=args.duration if not manual_mode else 0,
+                filename=getattr(args, 'filename', None),
+                directory=getattr(args, 'directory', None),
+                format='mp4',
+                manual_mode=manual_mode
+            )
+
+            if manual_mode:
+                # 手動停止モード
+                return self._execute_manual_mode(command_dto)
+            else:
+                # 時間指定モード
+                return self._execute_timed_mode(command_dto)
+
+        except Exception as e:
+            self.formatter.print_error(f"画面録画コマンドエラー: {e}")
+            return 1
+
+    def _execute_manual_mode(self, command_dto: ScreenRecordCommandDTO) -> int:
+        """手動停止モードで録画
+        
+        Args:
+            command_dto: 録画コマンドDTO
+            
+        Returns:
+            終了コード
+        """
+        self.formatter.print_info("手動停止モードで録画を開始します（Ctrl+C で停止）...")
+        
+        # Ctrl+Cハンドラー設定
+        def signal_handler(sig, frame):
+            self.stop_requested = True
+            self.formatter.print_info("\n録画停止を受け付けました...")
+        
+        signal.signal(signal.SIGINT, signal_handler)
+        
+        # 録画開始
+        start_result = self.screen_record_use_case.start_recording(command_dto)
+        
+        if not start_result.success:
+            self.formatter.print_error(f"録画開始に失敗しました: {start_result.message}")
+            return 1
+        
+        self.formatter.print_success("録画を開始しました")
+        
+        # 停止待機（タイマー表示付き）
+        start_time = time.time()
+        try:
+            while not self.stop_requested:
+                elapsed = time.time() - start_time
+                minutes = int(elapsed // 60)
+                seconds = int(elapsed % 60)
+                
+                # 経過時間表示（180秒=3分制限）
+                remaining = 180 - int(elapsed)
+                if remaining <= 0:
+                    self.formatter.print_warning("\n最大録画時間（3分）に達しました")
+                    break
+                
+                # 進捗表示
+                sys.stdout.write(f"\r録画中... {minutes:02d}:{seconds:02d} / 03:00")
+                sys.stdout.flush()
+                time.sleep(0.5)
+        
+        except KeyboardInterrupt:
+            pass
+        
+        # 録画停止
+        self.formatter.print_info("\n録画を停止しています...")
+        stop_result = self.screen_record_use_case.stop_recording()
+        
+        if stop_result.success:
+            self.formatter.print_success(f"録画完了: {stop_result.filepath}")
+            self.formatter.print_info(
+                f"録画時間: {stop_result.duration:.1f}秒 / "
+                f"ファイルサイズ: {stop_result.filesize / (1024*1024):.2f}MB"
+            )
+            return 0
+        else:
+            self.formatter.print_error(f"録画停止に失敗しました: {stop_result.message}")
+            return 1
+
+    def _execute_timed_mode(self, command_dto: ScreenRecordCommandDTO) -> int:
+        """時間指定モードで録画
+        
+        Args:
+            command_dto: 録画コマンドDTO
+            
+        Returns:
+            終了コード
+        """
+        duration = command_dto.duration
+        self.formatter.print_info(f"{duration}秒間の録画を開始します...")
+        
+        # 録画開始
+        start_result = self.screen_record_use_case.start_recording(command_dto)
+        
+        if not start_result.success:
+            self.formatter.print_error(f"録画開始に失敗しました: {start_result.message}")
+            return 1
+        
+        self.formatter.print_success("録画を開始しました")
+        
+        # 待機（進捗表示付き）
+        for elapsed in range(duration + 1):
+            if elapsed <= duration:
+                remaining = duration - elapsed
+                progress = (elapsed / duration) * 100
+                
+                # プログレスバー表示
+                bar_length = 30
+                filled = int(bar_length * elapsed / duration)
+                bar = '█' * filled + '░' * (bar_length - filled)
+                
+                sys.stdout.write(
+                    f"\r録画中... [{bar}] {progress:.0f}% "
+                    f"({elapsed}/{duration}秒) "
+                )
+                sys.stdout.flush()
+                time.sleep(1)
+        
+        # 録画停止
+        self.formatter.print_info("\n録画を停止しています...")
+        stop_result = self.screen_record_use_case.stop_recording()
+        
+        if stop_result.success:
+            self.formatter.print_success(f"録画完了: {stop_result.filepath}")
+            self.formatter.print_info(
+                f"録画時間: {stop_result.duration:.1f}秒 / "
+                f"ファイルサイズ: {stop_result.filesize / (1024*1024):.2f}MB"
+            )
+            return 0
+        else:
+            self.formatter.print_error(f"録画停止に失敗しました: {stop_result.message}")
             return 1

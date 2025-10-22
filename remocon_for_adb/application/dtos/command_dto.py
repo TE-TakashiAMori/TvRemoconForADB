@@ -56,3 +56,28 @@ class ScreenshotResultDTO:
     message: str
     execution_time: float
     timestamp: datetime = field(default_factory=datetime.now)
+
+
+@dataclass
+class ScreenRecordCommandDTO:
+    """画面録画コマンドのDTO"""
+    
+    duration: int = 30  # 録画時間（秒）、0=手動停止モード
+    filename: Optional[str] = None
+    directory: Optional[str] = None
+    format: str = "mp4"
+    manual_mode: bool = False  # 手動停止モード
+    timestamp: datetime = field(default_factory=datetime.now)
+
+
+@dataclass
+class ScreenRecordResultDTO:
+    """画面録画実行結果のDTO"""
+    
+    success: bool
+    filepath: str
+    filesize: int
+    duration: float  # 実際の録画時間（秒）
+    message: str
+    execution_time: float  # コマンド実行時間（秒）
+    timestamp: datetime = field(default_factory=datetime.now)

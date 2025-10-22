@@ -100,3 +100,52 @@ class DeviceRepository(ABC):
             DeviceConnectionError: 接続エラーの場合
         """
         pass
+
+    @abstractmethod
+    def start_screen_record(self, device_id: str, local_path: str, duration: int = 0) -> bool:
+        """画面録画を開始
+        
+        Args:
+            device_id: デバイスID
+            local_path: 保存先パス
+            duration: 録画時間（秒）、0=手動停止モード
+            
+        Returns:
+            bool: 開始成功の場合True
+            
+        Raises:
+            DeviceNotFoundError: デバイスが見つからない場合
+            DeviceConnectionError: 接続エラーの場合
+        """
+        pass
+
+    @abstractmethod
+    def stop_screen_record(self, device_id: str) -> bool:
+        """画面録画を停止
+        
+        Args:
+            device_id: デバイスID
+            
+        Returns:
+            bool: 停止成功の場合True
+            
+        Raises:
+            DeviceNotFoundError: デバイスが見つからない場合
+            DeviceConnectionError: 接続エラーの場合
+        """
+        pass
+
+    @abstractmethod
+    def is_screen_recording(self, device_id: str) -> bool:
+        """画面録画中かどうかを確認
+        
+        Args:
+            device_id: デバイスID
+            
+        Returns:
+            bool: 録画中の場合True
+            
+        Raises:
+            DeviceNotFoundError: デバイスが見つからない場合
+        """
+        pass

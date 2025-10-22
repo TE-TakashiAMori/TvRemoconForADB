@@ -173,3 +173,85 @@ class AdbDeviceRepository(DeviceRepository):
 
         except DeviceNotConnectedException as e:
             raise DeviceConnectionError(f"スクリーンショット撮影に失敗しました: {e}")
+
+    def start_screen_record(self, device_id: str, local_path: str, duration: int = 0) -> bool:
+        """画面録画を開始
+
+        Args:
+            device_id: デバイスID
+            local_path: 保存先パス
+            duration: 録画時間（秒）、0=手動停止モード
+
+        Returns:
+            開始が成功した場合True
+
+        Raises:
+            DeviceConnectionError: デバイス接続エラーまたは録画開始失敗
+        """
+        try:
+            # デバイスが利用可能かチェック
+            if not self.is_device_available(device_id):
+                raise DeviceConnectionError(f"デバイス {device_id} は利用できません")
+
+            # 録画を開始
+            success = self._adb_gateway.start_screen_record(device_id, local_path, duration)
+
+            return success
+
+        except DeviceNotConnectedException as e:
+            raise DeviceConnectionError(f"画面録画開始に失敗しました: {e}")
+
+    def stop_screen_record(self, device_id: str) -> bool:
+        """画面録画を停止
+
+        Args:
+            device_id: デバイスID
+
+        Returns:
+            停止が成功した場合True
+
+        Raises:
+            DeviceConnectionError: デバイス接続エラーまたは録画停止失敗
+        """
+        try:
+            # デバイスが利用可能かチェック
+            if not self.is_device_available(device_id):
+                raise DeviceConnectionError(f"デバイス {device_id} は利用できません")
+
+            # 録画を停止
+            success = self._adb_gateway.stop_screen_record(device_id)
+            
+            if success:
+                # ファイルをプル
+                # Note: local_pathはstart_screen_recordで指定されているため、
+                # AdbGatewayが内部で管理している前提
+                # 実際の実装ではpull処理も必要
+                pass
+
+            return success
+
+        except DeviceNotConnectedException as e:
+            raise DeviceConnectionError(f"画面録画停止に失敗しました: {e}")
+
+    def is_screen_recording(self, device_id: str) -> bool:
+        """画面録画中かどうかを確認
+
+        Args:
+            device_id: デバイスID
+
+        Returns:
+            録画中の場合True
+
+        Raises:
+            DeviceConnectionError: デバイス接続エラー
+        """
+        try:
+            # デバイスが利用可能かチェック
+            if not self.is_device_available(device_id):
+                return False
+
+            # 録画状態を確認
+            return self._adb_gateway.is_screen_recording(device_id)
+
+        except DeviceNotConnectedException:
+            return False

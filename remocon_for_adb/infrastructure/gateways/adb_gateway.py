@@ -233,3 +233,128 @@ class AdbGateway:
                 return True
         
         return False
+    
+    def start_screen_record(self, device_id: str, local_path: str, duration: int = 0) -> bool:
+        """画面録画を開始
+        
+        Args:
+            device_id: デバイスID
+            local_path: ローカル保存パス
+            duration: 録画時間（秒）、0=手動停止モード
+            
+        Returns:
+            bool: 成功した場合True
+        """
+        # デバイス上の一時パス
+        temp_device_path = "/sdcard/temp_screenrecord.mp4"
+        
+        # 録画コマンド構築
+        if duration > 0:
+            # 時間指定録画
+            record_command = ["shell", "screenrecord", "--time-limit", str(duration), temp_device_path]
+        else:
+            # 手動停止モード（最大3分）
+            record_command = ["shell", "screenrecord", temp_device_path]
+        
+        # バックグラウンドで録画開始（非同期）
+        try:
+            # バックグラウンドプロセスとして起動
+            full_command = [self.adb_path] + record_command
+            subprocess.Popen(
+                full_command,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            
+            # 少し待機（録画開始を確認）
+            time.sleep(0.5)
+            
+            # 録画プロセスが動いているか確認
+            check_result = self._execute_adb_command(["shell", "ps | grep screenrecord"])
+            
+            if "screenrecord" not in check_result.stdout:
+                return False
+            
+            return True
+            
+        except Exception:
+            return False
+    
+    def stop_screen_record(self, device_id: str) -> bool:
+        """画面録画を停止
+        
+        Args:
+            device_id: デバイスID
+            
+        Returns:
+            bool: 成功した場合True
+        """
+        try:
+            # screenrecordプロセスを検索
+            ps_result = self._execute_adb_command(["shell", "ps | grep screenrecord"])
+            
+            if "screenrecord" not in ps_result.stdout:
+                # 既に停止している
+                return True
+            
+            # プロセスIDを抽出（簡易版）
+            # 出力例: "shell    12345  1234  ... screenrecord"
+            lines = ps_result.stdout.strip().split('\n')
+            for line in lines:
+                if 'screenrecord' in line and '/sdcard/' in line:
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        pid = parts[1]
+                        # SIGINTシグナルを送信して正常終了
+                        kill_result = self._execute_adb_command(["shell", f"kill -2 {pid}"])
+                        if kill_result.success:
+                            # 停止完了を少し待つ
+                            time.sleep(1.0)
+                            return True
+            
+            return False
+            
+        except Exception:
+            return False
+    
+    def pull_screen_record(self, device_id: str, local_path: str) -> bool:
+        """録画ファイルをデバイスからプル
+        
+        Args:
+            device_id: デバイスID
+            local_path: ローカル保存パス
+            
+        Returns:
+            bool: 成功した場合True
+        """
+        temp_device_path = "/sdcard/temp_screenrecord.mp4"
+        
+        # ファイルが存在するか確認
+        check_result = self._execute_adb_command(["shell", f"ls {temp_device_path}"])
+        if check_result.return_code != 0:
+            return False
+        
+        # ファイルをプル
+        pull_result = self.pull_file(temp_device_path, local_path)
+        
+        if pull_result.success:
+            # デバイス上のファイル削除
+            self.remove_file(temp_device_path)
+            return True
+        
+        return False
+    
+    def is_screen_recording(self, device_id: str) -> bool:
+        """画面録画中かどうかを確認
+        
+        Args:
+            device_id: デバイスID
+            
+        Returns:
+            bool: 録画中の場合True
+        """
+        try:
+            ps_result = self._execute_adb_command(["shell", "ps | grep screenrecord"])
+            return "screenrecord" in ps_result.stdout and "/sdcard/" in ps_result.stdout
+        except Exception:
+            return False

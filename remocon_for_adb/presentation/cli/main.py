@@ -9,12 +9,14 @@ from typing import Optional
 
 from remocon_for_adb.application.use_cases.remote_control_use_case import RemoteControlUseCase
 from remocon_for_adb.application.use_cases.screenshot_use_case import ScreenshotUseCase
+from remocon_for_adb.application.use_cases.screen_record_use_case import ScreenRecordUseCase
 from remocon_for_adb.infrastructure.gateways.adb_gateway import AdbGateway
 from remocon_for_adb.infrastructure.repositories.adb_device_repository import AdbDeviceRepository
 from remocon_for_adb.presentation.cli.commands import (
     DirectionCommand,
     ButtonCommand,
     ScreenshotCommand,
+    RecordCommand,
     DeviceCommand,
 )
 from remocon_for_adb.presentation.formatters.console_formatter import ConsoleFormatter
@@ -32,12 +34,14 @@ class RemoconCLI:
         # Application層の初期化
         self.remote_control_use_case = RemoteControlUseCase(self.device_repository)
         self.screenshot_use_case = ScreenshotUseCase(self.device_repository)
+        self.screen_record_use_case = ScreenRecordUseCase(self.device_repository)
         
         # Presentation層の初期化
         self.formatter = ConsoleFormatter()
         self.direction_command = DirectionCommand(self.remote_control_use_case, self.formatter)
         self.button_command = ButtonCommand(self.remote_control_use_case, self.formatter)
         self.screenshot_command = ScreenshotCommand(self.screenshot_use_case, self.formatter)
+        self.record_command = RecordCommand(self.screen_record_use_case, self.formatter)
         self.device_command = DeviceCommand(self.device_repository, self.formatter)
 
     def create_parser(self) -> argparse.ArgumentParser:
@@ -59,6 +63,9 @@ class RemoconCLI:
   remocon-adb menu                       # メニューボタン
   remocon-adb screenshot                 # スクリーンショット撮影
   remocon-adb screenshot -f my_screen.png # ファイル名指定でスクリーンショット
+  remocon-adb record                     # 画面録画（30秒）
+  remocon-adb record -d 60               # 60秒間録画
+  remocon-adb record --manual            # 手動停止モード録画
             """
         )
 
@@ -161,6 +168,32 @@ class RemoconCLI:
             help="対象デバイスID（未指定時は最初のデバイス）"
         )
 
+        # record サブコマンド
+        record_parser = subparsers.add_parser("record", help="画面録画")
+        record_parser.add_argument(
+            "--duration", "-d",
+            type=int,
+            default=30,
+            help="録画時間（秒、0=手動停止、デフォルト: 30）"
+        )
+        record_parser.add_argument(
+            "--filename", "-f",
+            help="出力ファイル名（未指定時は自動生成）"
+        )
+        record_parser.add_argument(
+            "--directory", "-dir",
+            help="保存ディレクトリ（未指定時はデフォルト）"
+        )
+        record_parser.add_argument(
+            "--manual", "-m",
+            action="store_true",
+            help="手動停止モード（Ctrl+Cで停止）"
+        )
+        record_parser.add_argument(
+            "--device", "-dev",
+            help="対象デバイスID（未指定時は最初のデバイス）"
+        )
+
         return parser
 
     def run(self, args: Optional[list] = None) -> int:
@@ -198,6 +231,8 @@ class RemoconCLI:
                 return self.button_command.execute(parsed_args)
             elif parsed_args.command == "screenshot":
                 return self.screenshot_command.execute(parsed_args)
+            elif parsed_args.command == "record":
+                return self.record_command.execute(parsed_args)
             else:
                 parser.print_help()
                 return 0

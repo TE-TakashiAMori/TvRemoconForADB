@@ -120,11 +120,12 @@ class DeviceRepository(ABC):
         pass
 
     @abstractmethod
-    def stop_screen_record(self, device_id: str) -> bool:
+    def stop_screen_record(self, device_id: str, local_path: str) -> bool:
         """画面録画を停止
         
         Args:
             device_id: デバイスID
+            local_path: 保存先パス
             
         Returns:
             bool: 停止成功の場合True

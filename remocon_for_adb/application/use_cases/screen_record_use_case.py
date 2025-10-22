@@ -162,8 +162,22 @@ class ScreenRecordUseCase:
             # 録画停止
             self._current_recording.stop_recording()
             
-            # デバイスで録画停止
-            success = self._device_repository.stop_screen_record(device.device_id)
+            # ファイルパス取得
+            filepath = self._current_recording.filepath
+            if not filepath:
+                self._current_recording.mark_error("Recording filepath not set")
+                execution_time = time.time() - start_time
+                return ScreenRecordResultDTO(
+                    success=False,
+                    filepath="",
+                    filesize=0,
+                    duration=0.0,
+                    message="Recording filepath not set",
+                    execution_time=execution_time
+                )
+            
+            # デバイスで録画停止してファイルをプル
+            success = self._device_repository.stop_screen_record(device.device_id, str(filepath))
             
             if not success:
                 self._current_recording.mark_error("Failed to stop recording on device")
@@ -179,9 +193,6 @@ class ScreenRecordUseCase:
             
             # ファイルダウンロード待機（少し待つ）
             time.sleep(0.5)
-            
-            # ファイル情報取得
-            filepath = self._current_recording.filepath
             if not filepath or not os.path.exists(filepath):
                 self._current_recording.mark_error("Recording file not found")
                 execution_time = time.time() - start_time

@@ -280,11 +280,12 @@ class AdbGateway:
         except Exception:
             return False
     
-    def stop_screen_record(self, device_id: str) -> bool:
-        """画面録画を停止
+    def stop_screen_record(self, device_id: str, local_path: str) -> bool:
+        """画面録画を停止してファイルをプル
         
         Args:
             device_id: デバイスID
+            local_path: 保存先パス
             
         Returns:
             bool: 成功した場合True
@@ -294,8 +295,8 @@ class AdbGateway:
             ps_result = self._execute_adb_command(["shell", "ps | grep screenrecord"])
             
             if "screenrecord" not in ps_result.stdout:
-                # 既に停止している
-                return True
+                # 既に停止している場合はプルだけ実行
+                return self.pull_screen_record(device_id, local_path)
             
             # プロセスIDを抽出（簡易版）
             # 出力例: "shell    12345  1234  ... screenrecord"
@@ -309,8 +310,9 @@ class AdbGateway:
                         kill_result = self._execute_adb_command(["shell", f"kill -2 {pid}"])
                         if kill_result.success:
                             # 停止完了を少し待つ
-                            time.sleep(1.0)
-                            return True
+                            time.sleep(2.0)
+                            # ファイルをプル
+                            return self.pull_screen_record(device_id, local_path)
             
             return False
             

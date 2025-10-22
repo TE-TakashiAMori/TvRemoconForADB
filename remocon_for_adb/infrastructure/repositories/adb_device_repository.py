@@ -201,11 +201,12 @@ class AdbDeviceRepository(DeviceRepository):
         except DeviceNotConnectedException as e:
             raise DeviceConnectionError(f"画面録画開始に失敗しました: {e}")
 
-    def stop_screen_record(self, device_id: str) -> bool:
+    def stop_screen_record(self, device_id: str, local_path: str) -> bool:
         """画面録画を停止
 
         Args:
             device_id: デバイスID
+            local_path: 保存先パス
 
         Returns:
             停止が成功した場合True
@@ -218,15 +219,8 @@ class AdbDeviceRepository(DeviceRepository):
             if not self.is_device_available(device_id):
                 raise DeviceConnectionError(f"デバイス {device_id} は利用できません")
 
-            # 録画を停止
-            success = self._adb_gateway.stop_screen_record(device_id)
-            
-            if success:
-                # ファイルをプル
-                # Note: local_pathはstart_screen_recordで指定されているため、
-                # AdbGatewayが内部で管理している前提
-                # 実際の実装ではpull処理も必要
-                pass
+            # 録画を停止してファイルをプル
+            success = self._adb_gateway.stop_screen_record(device_id, local_path)
 
             return success
 

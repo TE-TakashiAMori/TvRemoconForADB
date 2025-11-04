@@ -37,6 +37,8 @@ class RemoteCommand:
     command_type: CommandType
     key_code: str
     raw_command: str
+    is_long_press: bool = False
+    duration_ms: Optional[int] = None  # 長押し時間（ミリ秒）※将来の拡張用
     timestamp: Optional[datetime] = field(default=None)
 
     def __post_init__(self) -> None:
@@ -45,21 +47,29 @@ class RemoteCommand:
             self.timestamp = datetime.now()
     
     @classmethod
-    def create_direction_command(cls, direction: DirectionKey) -> 'RemoteCommand':
+    def create_direction_command(cls, direction: DirectionKey, is_long_press: bool = False, 
+                                  duration_ms: Optional[int] = None) -> 'RemoteCommand':
         """方向キーコマンドを作成"""
+        longpress_flag = " --longpress" if is_long_press else ""
         return cls(
             command_type=CommandType.DIRECTION,
             key_code=direction.value,
-            raw_command=f"input keyevent {direction.value}"
+            raw_command=f"input keyevent{longpress_flag} {direction.value}",
+            is_long_press=is_long_press,
+            duration_ms=duration_ms
         )
     
     @classmethod
-    def create_button_command(cls, button: ButtonKey) -> 'RemoteCommand':
+    def create_button_command(cls, button: ButtonKey, is_long_press: bool = False,
+                               duration_ms: Optional[int] = None) -> 'RemoteCommand':
         """ボタンコマンドを作成"""
+        longpress_flag = " --longpress" if is_long_press else ""
         return cls(
             command_type=CommandType.BUTTON,
             key_code=button.value,
-            raw_command=f"input keyevent {button.value}"
+            raw_command=f"input keyevent{longpress_flag} {button.value}",
+            is_long_press=is_long_press,
+            duration_ms=duration_ms
         )
     
     @classmethod

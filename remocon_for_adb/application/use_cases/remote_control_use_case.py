@@ -61,8 +61,19 @@ class RemoteControlUseCase:
             # プライマリデバイス取得
             device = self._get_primary_device()
             
-            # リモートコマンド作成
-            remote_command = RemoteCommand.from_string(command.key)
+            # リモートコマンド作成（長押し対応）
+            direction_mapping = {
+                'up': DirectionKey.UP,
+                'down': DirectionKey.DOWN,
+                'left': DirectionKey.LEFT,
+                'right': DirectionKey.RIGHT
+            }
+            direction_key = direction_mapping[command.key]
+            remote_command = RemoteCommand.create_direction_command(
+                direction_key, 
+                is_long_press=command.is_long_press,
+                duration_ms=command.duration_ms
+            )
             
             # ADBコマンド実行
             success = self._device_repository.execute_command(
@@ -123,8 +134,18 @@ class RemoteControlUseCase:
             # プライマリデバイス取得
             device = self._get_primary_device()
             
-            # リモートコマンド作成
-            remote_command = RemoteCommand.from_string(command.key)
+            # リモートコマンド作成（長押し対応）
+            button_mapping = {
+                'select': ButtonKey.SELECT,
+                'back': ButtonKey.BACK,
+                'home': ButtonKey.HOME
+            }
+            button_key = button_mapping[command.key]
+            remote_command = RemoteCommand.create_button_command(
+                button_key,
+                is_long_press=command.is_long_press,
+                duration_ms=command.duration_ms
+            )
             
             # ADBコマンド実行
             success = self._device_repository.execute_command(

@@ -13,6 +13,8 @@ class RemoteCommandDTO:
     
     command_type: str  # 'direction', 'button'
     key: str          # 'up', 'down', 'left', 'right', 'select', 'back', 'home'
+    is_long_press: bool = False  # 長押しフラグ
+    duration_ms: Optional[int] = None  # 長押し時間（ミリ秒）※将来の拡張用
     timestamp: datetime = field(default_factory=datetime.now)
     
     def __eq__(self, other: object) -> bool:

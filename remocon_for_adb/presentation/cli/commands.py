@@ -114,10 +114,11 @@ class DirectionCommand(BaseCommand):
             終了コード
         """
         try:
-            # コマンドDTOを作成
+            # コマンドDTOを作成（長押し対応）
             command_dto = RemoteCommandDTO(
                 command_type="direction",
-                key=args.key
+                key=args.key,
+                is_long_press=getattr(args, 'long_press', False)
             )
 
             # ユースケースを実行
@@ -160,10 +161,11 @@ class ButtonCommand(BaseCommand):
             終了コード
         """
         try:
-            # コマンドDTOを作成
+            # コマンドDTOを作成（長押し対応）
             command_dto = RemoteCommandDTO(
                 command_type="button",
-                key=args.key
+                key=args.key,
+                is_long_press=getattr(args, 'long_press', False)
             )
 
             # ユースケースを実行

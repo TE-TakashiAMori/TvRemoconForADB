@@ -121,6 +121,10 @@ remocon-adb select            # 決定
 remocon-adb back              # 戻る
 remocon-adb home              # ホーム
 
+# 長押し機能（全キーで対応）
+remocon-adb select --long-press   # 決定ボタン長押し
+remocon-adb up -l                 # 上キー長押し（-lは--long-pressの短縮形）
+
 # デバイス一覧表示
 remocon-adb devices           # 接続中のデバイス一覧
 ```
@@ -188,7 +192,9 @@ remocon-adb-gui
 ```
 
 #### 操作方法
-- **マウス操作**: ボタンをクリックしてリモコン操作
+- **マウス操作**: 
+  - クリック → 通常キー送信
+  - 長押し（500ms以上）→ 長押しキー送信
 - **キーボードショートカット**:
   - 矢印キー → 方向操作
   - Enter → 選択

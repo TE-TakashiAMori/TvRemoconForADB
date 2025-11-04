@@ -85,11 +85,21 @@ class RemoconCLI:
             "--device", "-d",
             help="対象デバイスID（未指定時は最初のデバイス）"
         )
+        up_parser.add_argument(
+            "--long-press", "-l",
+            action="store_true",
+            help="長押しモード"
+        )
         
         down_parser = subparsers.add_parser("down", help="下方向キー")
         down_parser.add_argument(
             "--device", "-d",
             help="対象デバイスID（未指定時は最初のデバイス）"
+        )
+        down_parser.add_argument(
+            "--long-press", "-l",
+            action="store_true",
+            help="長押しモード"
         )
         
         left_parser = subparsers.add_parser("left", help="左方向キー")
@@ -97,11 +107,21 @@ class RemoconCLI:
             "--device", "-d",
             help="対象デバイスID（未指定時は最初のデバイス）"
         )
+        left_parser.add_argument(
+            "--long-press", "-l",
+            action="store_true",
+            help="長押しモード"
+        )
         
         right_parser = subparsers.add_parser("right", help="右方向キー")
         right_parser.add_argument(
             "--device", "-d",
             help="対象デバイスID（未指定時は最初のデバイス）"
+        )
+        right_parser.add_argument(
+            "--long-press", "-l",
+            action="store_true",
+            help="長押しモード"
         )
 
         # ボタンコマンド（直接指定）
@@ -110,17 +130,32 @@ class RemoconCLI:
             "--device", "-d",
             help="対象デバイスID（未指定時は最初のデバイス）"
         )
+        select_parser.add_argument(
+            "--long-press", "-l",
+            action="store_true",
+            help="長押しモード"
+        )
         
         back_parser = subparsers.add_parser("back", help="戻るボタン")
         back_parser.add_argument(
             "--device", "-d",
             help="対象デバイスID（未指定時は最初のデバイス）"
         )
+        back_parser.add_argument(
+            "--long-press", "-l",
+            action="store_true",
+            help="長押しモード"
+        )
         
         home_parser = subparsers.add_parser("home", help="ホームボタン")
         home_parser.add_argument(
             "--device", "-d",
             help="対象デバイスID（未指定時は最初のデバイス）"
+        )
+        home_parser.add_argument(
+            "--long-press", "-l",
+            action="store_true",
+            help="長押しモード"
         )
 
         # screenshot サブコマンド

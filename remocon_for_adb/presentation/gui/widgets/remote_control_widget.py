@@ -31,8 +31,13 @@ class RemoteControlWidget(tk.Frame):
         self.remote_control_use_case = remote_control_use_case
         self.command_callback = command_callback
         
+        # 長押し検出用
+        self._press_start_time = None
+        self._long_press_threshold_ms = 500  # 500ms以上で長押し判定
+        
         self._create_widgets()
         self._setup_layout()
+        self._setup_long_press_bindings()
 
     def _create_widgets(self) -> None:
         """ウィジェットを作成"""
@@ -141,30 +146,73 @@ class RemoteControlWidget(tk.Frame):
         self.btn_back.pack(pady=5)
         self.btn_home.pack(pady=5)
 
-    def send_direction(self, direction: str) -> None:
+    def _setup_long_press_bindings(self) -> None:
+        """長押し検出のバインディングを設定"""
+        # 全ボタンに長押し検出を設定
+        buttons = {
+            self.btn_up: ('direction', 'up'),
+            self.btn_down: ('direction', 'down'),
+            self.btn_left: ('direction', 'left'),
+            self.btn_right: ('direction', 'right'),
+            self.btn_select: ('button', 'select'),
+            self.btn_back: ('button', 'back'),
+            self.btn_home: ('button', 'home')
+        }
+        
+        for button, (cmd_type, key) in buttons.items():
+            # 元のcommandを無効化して、イベントベースに変更
+            button.config(command=lambda: None)
+            button.bind('<ButtonPress-1>', lambda e, t=cmd_type, k=key: self._on_button_press(t, k))
+            button.bind('<ButtonRelease-1>', lambda e, t=cmd_type, k=key: self._on_button_release(t, k))
+
+    def _on_button_press(self, command_type: str, key: str) -> None:
+        """ボタン押下時の処理"""
+        import time
+        self._press_start_time = time.time()
+        self._current_command = (command_type, key)
+
+    def _on_button_release(self, command_type: str, key: str) -> None:
+        """ボタンリリース時の処理"""
+        import time
+        if self._press_start_time:
+            press_duration = (time.time() - self._press_start_time) * 1000  # ミリ秒
+            is_long_press = press_duration >= self._long_press_threshold_ms
+            
+            # コマンド送信
+            if command_type == 'direction':
+                self.send_direction(key, is_long_press)
+            else:
+                self.send_button(key, is_long_press)
+            
+            self._press_start_time = None
+
+    def send_direction(self, direction: str, is_long_press: bool = False) -> None:
         """方向キーコマンドを送信
         
         Args:
             direction: 方向（up, down, left, right）
+            is_long_press: 長押しフラグ
         """
-        self._send_command_async('direction', direction)
+        self._send_command_async('direction', direction, is_long_press)
 
-    def send_button(self, button: str) -> None:
+    def send_button(self, button: str, is_long_press: bool = False) -> None:
         """ボタンコマンドを送信
         
         Args:
             button: ボタン（select, back, home）
+            is_long_press: 長押しフラグ
         """
-        self._send_command_async('button', button)
+        self._send_command_async('button', button, is_long_press)
 
-    def _send_command_async(self, command_type: str, key: str) -> None:
+    def _send_command_async(self, command_type: str, key: str, is_long_press: bool = False) -> None:
         """非同期でコマンドを送信"""
         def execute_command():
             try:
-                # DTOを作成
+                # DTOを作成（長押し対応）
                 command_dto = RemoteCommandDTO(
                     command_type=command_type,
-                    key=key
+                    key=key,
+                    is_long_press=is_long_press
                 )
                 
                 # コマンドを実行

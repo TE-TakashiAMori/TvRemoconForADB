@@ -60,7 +60,6 @@ class RemoconCLI:
   remocon-adb select                     # 選択ボタン
   remocon-adb back                       # 戻るボタン
   remocon-adb home                       # ホームボタン
-  remocon-adb menu                       # メニューボタン
   remocon-adb screenshot                 # スクリーンショット撮影
   remocon-adb screenshot -f my_screen.png # ファイル名指定でスクリーンショット
   remocon-adb record                     # 画面録画（30秒）
@@ -120,12 +119,6 @@ class RemoconCLI:
         
         home_parser = subparsers.add_parser("home", help="ホームボタン")
         home_parser.add_argument(
-            "--device", "-d",
-            help="対象デバイスID（未指定時は最初のデバイス）"
-        )
-        
-        menu_parser = subparsers.add_parser("menu", help="メニューボタン")
-        menu_parser.add_argument(
             "--device", "-d",
             help="対象デバイスID（未指定時は最初のデバイス）"
         )
@@ -225,8 +218,8 @@ class RemoconCLI:
                 # 方向キーコマンドの場合、argsにkeyを設定
                 parsed_args.key = parsed_args.command
                 return self.direction_command.execute(parsed_args)
-            elif parsed_args.command in ["select", "back", "home", "menu"]:
-                # ボタンコマンドの場合、argsにkeyを設定
+            elif parsed_args.command in ["select", "back", "home"]:
+                # ボタンコマンドの場合、argsにkeyを設定（Android TV必須キーのみ）
                 parsed_args.key = parsed_args.command
                 return self.button_command.execute(parsed_args)
             elif parsed_args.command == "screenshot":

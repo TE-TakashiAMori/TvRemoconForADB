@@ -35,9 +35,9 @@ class RemoteControlUseCase:
         """
         self._device_repository = device_repository
         
-        # 有効なキーの定義
+        # 有効なキーの定義（Android TV必須キーのみ）
         self._valid_direction_keys = ["up", "down", "left", "right"]
-        self._valid_button_keys = ["select", "back", "home", "menu"]
+        self._valid_button_keys = ["select", "back", "home"]
 
     def execute_direction_key(self, command: RemoteCommandDTO) -> CommandResultDTO:
         """方向キーの操作を実行

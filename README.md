@@ -14,7 +14,7 @@ Android TVデバイスをU```
 
 ## ✨ 主な機能
 
-- 🎮 **基本リモコン操作**: 方向キー（上下左右）、決定、戻る、ホーム、メニューボタン
+- 🎮 **基本リモコン操作**: 方向キー（上下左右）、決定、戻る、ホームボタン（Android TV必須キーのみ）
 - � **CLI・GUI両対応**: コマンドライン版とグラフィカル版を提供
 - �📸 **スクリーンショット機能**: Android TVの画面キャプチャと保存
 - 📝 **操作ログ機能**: 実行したコマンドの記録と参照
@@ -116,11 +116,10 @@ remocon-adb down              # 下
 remocon-adb left              # 左
 remocon-adb right             # 右
 
-# 基本ボタン
+# 基本ボタン（Android TV必須キーのみ）
 remocon-adb select            # 決定
 remocon-adb back              # 戻る
 remocon-adb home              # ホーム
-remocon-adb menu              # メニュー
 
 # デバイス一覧表示
 remocon-adb devices           # 接続中のデバイス一覧

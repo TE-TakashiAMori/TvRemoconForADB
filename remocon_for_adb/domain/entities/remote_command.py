@@ -24,11 +24,10 @@ class DirectionKey(Enum):
 
 
 class ButtonKey(Enum):
-    """ボタンキーの列挙型"""
+    """ボタンキーの列挙型（Android TV必須キーのみ）"""
     SELECT = "KEYCODE_DPAD_CENTER"
     BACK = "KEYCODE_BACK"
     HOME = "KEYCODE_HOME"
-    MENU = "KEYCODE_MENU"
 
 
 @dataclass

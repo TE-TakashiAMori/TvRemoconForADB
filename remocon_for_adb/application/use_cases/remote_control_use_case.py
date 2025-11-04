@@ -37,7 +37,7 @@ class RemoteControlUseCase:
         
         # 有効なキーの定義
         self._valid_direction_keys = ["up", "down", "left", "right"]
-        self._valid_button_keys = ["select", "back", "home"]
+        self._valid_button_keys = ["select", "back", "home", "menu"]
 
     def execute_direction_key(self, command: RemoteCommandDTO) -> CommandResultDTO:
         """方向キーの操作を実行

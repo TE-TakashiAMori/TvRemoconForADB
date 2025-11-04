@@ -84,12 +84,11 @@ class RemoteCommand:
             'right': DirectionKey.RIGHT
         }
         
-        # ボタンマッピング
+        # ボタンマッピング（Android TV必須キーのみ）
         button_mapping = {
             'select': ButtonKey.SELECT,
             'back': ButtonKey.BACK,
-            'home': ButtonKey.HOME,
-            'menu': ButtonKey.MENU
+            'home': ButtonKey.HOME
         }
         
         # 方向キーチェック

@@ -31,9 +31,12 @@ class RemoteControlWidget(tk.Frame):
         self.remote_control_use_case = remote_control_use_case
         self.command_callback = command_callback
         
-        # 長押し検出用
-        self._press_start_time = None
-        self._long_press_threshold_ms = 500  # 500ms以上で長押し判定
+        # 長押し連続送信用
+        self._is_pressing = False
+        self._repeat_interval_ms = 100  # 100msごとに繰り返し送信
+        self._initial_delay_ms = 300  # 最初の遅延（長押し判定）
+        self._repeat_job = None
+        self._current_command = None
         
         self._create_widgets()
         self._setup_layout()
@@ -167,24 +170,41 @@ class RemoteControlWidget(tk.Frame):
 
     def _on_button_press(self, command_type: str, key: str) -> None:
         """ボタン押下時の処理"""
-        import time
-        self._press_start_time = time.time()
+        self._is_pressing = True
         self._current_command = (command_type, key)
+        
+        # 即座に1回目を送信（通常押し）
+        if command_type == 'direction':
+            self.send_direction(key, is_long_press=False)
+        else:
+            self.send_button(key, is_long_press=False)
+        
+        # 長押し判定後、連続送信を開始
+        self._repeat_job = self.after(self._initial_delay_ms, self._repeat_command)
 
     def _on_button_release(self, command_type: str, key: str) -> None:
         """ボタンリリース時の処理"""
-        import time
-        if self._press_start_time:
-            press_duration = (time.time() - self._press_start_time) * 1000  # ミリ秒
-            is_long_press = press_duration >= self._long_press_threshold_ms
+        self._is_pressing = False
+        self._current_command = None
+        
+        # 連続送信をキャンセル
+        if self._repeat_job:
+            self.after_cancel(self._repeat_job)
+            self._repeat_job = None
+    
+    def _repeat_command(self) -> None:
+        """押下中のコマンドを繰り返し送信"""
+        if self._is_pressing and self._current_command:
+            command_type, key = self._current_command
             
-            # コマンド送信
+            # コマンドを送信
             if command_type == 'direction':
-                self.send_direction(key, is_long_press)
+                self.send_direction(key, is_long_press=False)
             else:
-                self.send_button(key, is_long_press)
+                self.send_button(key, is_long_press=False)
             
-            self._press_start_time = None
+            # 次の繰り返しをスケジュール
+            self._repeat_job = self.after(self._repeat_interval_ms, self._repeat_command)
 
     def send_direction(self, direction: str, is_long_press: bool = False) -> None:
         """方向キーコマンドを送信
